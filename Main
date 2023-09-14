@@ -1,0 +1,66 @@
+Sub CompareAndExtract()
+    Dim ws As Worksheet
+    Dim lastRowAtoM As Long
+    Dim lastRowNtoZ As Long
+    Dim extractRow As Long
+    Dim col As Long
+    Dim matchFound As Boolean
+    
+    ' Set worksheet
+    Set ws = ThisWorkbook.Worksheets("MergedData") ' Change to your sheet name
+    
+    ' Find the last rows in both ranges
+    lastRowAtoM = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastRowNtoZ = ws.Cells(ws.Rows.Count, 14).End(xlUp).Row ' Column N
+    
+    ' Create a new sheet for extracted data
+    Dim extractedWs As Worksheet
+    On Error Resume Next
+    Set extractedWs = ThisWorkbook.Worksheets("ExtractedData")
+    On Error GoTo 0
+    
+    If extractedWs Is Nothing Then
+        Set extractedWs = ThisWorkbook.Worksheets.Add
+        extractedWs.Name = "ExtractedData"
+    End If
+    
+    ' Copy headers from columns A to M
+    For col = 1 To 13 ' Columns A to M
+        extractedWs.Cells(1, col).Value = ws.Cells(1, col).Value
+    Next col
+    
+    ' Extract rows from A to M that are not in N to Z
+    extractRow = 2 ' Start from the second row in the ExtractedData worksheet
+    For rowAtoM = 2 To lastRowAtoM
+        ' Extract data from columns A to M
+        matchFound = False
+        
+        For rowNtoZ = 2 To lastRowNtoZ
+            ' Compare entire rows from columns A to M with N to Z
+            Dim rowsMatch As Boolean
+            rowsMatch = True
+            
+            For col = 1 To 13
+                If ws.Cells(rowAtoM, col).Value <> ws.Cells(rowNtoZ, col + 13).Value Then
+                    rowsMatch = False
+                    Exit For
+                End If
+            Next col
+            
+            If rowsMatch Then
+                matchFound = True
+                Exit For
+            End If
+        Next rowNtoZ
+        
+        If Not matchFound Then
+            ' Copy entire row to ExtractedData worksheet
+            For col = 1 To 13
+                extractedWs.Cells(extractRow, col).Value = ws.Cells(rowAtoM, col).Value
+            Next col
+            extractRow = extractRow + 1
+        End If
+    Next rowAtoM
+    
+    MsgBox "Extraction completed!"
+End Sub
